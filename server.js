@@ -21,7 +21,7 @@ app.get("/", (req, res) => {
 //TODO: Send Picture on connection
 
 io.on("connection", (socket) => {
-    if(data.mouseX.length) socket.emit("updateCanvas", data)
+    if (data.mouseX.length) socket.emit("updateCanvas", data)
 
     socket.on("drawing", (picture) => {
 
@@ -43,6 +43,6 @@ function UpdateData(picture) {
 }
 
 
-http.listen(3000, () => {
+http.listen(process.env.app_port || 8080, () => {
     console.log("Server running on port 3000...")
 })
