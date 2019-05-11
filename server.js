@@ -6,7 +6,7 @@ const io = require("socket.io")(http)
 let data = {
     mouseX: [],
     mouseY: [],
-    mousedown: []
+    mousedown: [],
 }
 
 app.use(express.static(__dirname))
@@ -18,7 +18,7 @@ app.get("/", (req, res) => {
 io.on("connection", (socket) => {
     socket.on("drawing", (picture) => {
 
-        if (picture.mouseX !== undefined) {
+        if (picture.clientX !== undefined) {
 
             UpdateData(picture)
             io.sockets.emit("updateCanvas", data)
@@ -29,9 +29,9 @@ io.on("connection", (socket) => {
 
 
 function UpdateData(picture) {
-    data.mouseX = [].concat.apply(data.mouseX, picture.mouseX)
-    data.mouseY = [].concat.apply(data.mouseY, picture.mouseY)
-    data.mousedown = [].concat.apply(data.mousedown, picture.mousedown)
+    data.mouseX[picture.localProgress] = picture.clientX
+    data.mouseY[picture.localProgress] = picture.clientY
+    data.mousedown[picture.localProgress] = picture.isMouseDown
 }
 
 
