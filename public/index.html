@@ -1,4 +1,5 @@
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,11 +8,29 @@
     <link rel="stylesheet" href="./public/main.css">
     <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
 </head>
+
 <body>
-    <h1>CRAW</h1>
-    <canvas id="myCanvas" width="300" height="300">
-    </canvas>
+    <main>
+        <header>
+            <h1>CRAW</h1>
+        </header>
+        <div class="container">
+            <section class="content">
+                <canvas id="myCanvas" width="600" height="300">
+                </canvas>
+            </section>
+            <aside class="sidebar">
+                <div class="color-button" id="red"></div>
+                <div class="color-button" id="green"></div>
+                <div class="color-button" id="blue"></div>
+                <div class="color-button" id="orange"></div>
+                <div class="color-button" id="black"></div>
+            </aside>
+        </div>
+        <footer></footer>
+    </main>
     <script src="/socket.io/socket.io.js"></script>
     <script src="./public/index.js"></script>
 </body>
+
 </html>
