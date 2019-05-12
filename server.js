@@ -7,18 +7,21 @@ let data = {
     mouseX: [],
     mouseY: [],
     mousedown: [],
-    color: []
+    color: [],
+
 }
 
+let prevCoord = {}
+let prevSocketId
+
+let t = 0
 app.use(express.static(__dirname))
 
-//TODO: Add creator functionality
 
 app.get("/", (req, res) => {
     res.sendFile(__dirname + "/public/index.html")
 })
 
-//TODO: Send Picture on connection
 
 io.on("connection", (socket) => {
     if (data.mouseX.length) socket.emit("updateCanvas", data)
@@ -26,9 +29,24 @@ io.on("connection", (socket) => {
     socket.on("drawing", (picture) => {
 
         if (picture.clientX !== undefined) {
+            if (!checkSocket(socket, picture)) {
 
-            UpdateData(picture)
-            io.sockets.emit("updateCanvas", data)
+                UpdateData(picture)
+                io.sockets.emit("updateCanvas", data)
+            }
+
+            prevCoord = picture
+            prevSocketId = socket.id
+
+        }
+    })
+
+    socket.on("dropPicture", () => {
+        data = {
+            mouseX: [],
+            mouseY: [],
+            mousedown: [],
+            color: [],
 
         }
     })
@@ -42,6 +60,19 @@ function UpdateData(picture) {
     data.color[picture.localProgress] = picture.color
 }
 
+function checkSocket(socket, picture) {
+
+    if (socket.id === prevSocketId) {
+        if (picture.clientX[picture.clientX.length - 1] === prevCoord.clientX) {
+            if (picture.clientY[picture.clientY.length - 1] === prevCoord.clientY) {
+                if (picture.clientX[picture.isMouseDown.length - 1] === prevCoord.isMouseDown) {
+                    return true
+                }
+            }
+        }
+    }
+    return false
+}
 
 http.listen(process.env.app_port || 8080, () => {
     console.log("Server running on port 3000...")

@@ -57,6 +57,24 @@ header {
     background-color: #ff9900;
 }
 
+
+.menu-icon {
+    width: 30px;
+    height: 30px;
+    background-position: center;
+    background-size: 30px;
+    background-repeat: no-repeat;
+}
+
+#eraser {
+    background-image: url("./assets/eraser.png");
+}
+
+
+#trash {
+    background-image: url("./assets/trash.png");
+}
+
 .color-button {
     border: 1px solid black;
     border-radius: 100%;

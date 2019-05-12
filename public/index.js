@@ -4,8 +4,11 @@ window.onload = function () {
     const canvas = document.getElementById("myCanvas")
     const ctx = canvas.getContext("2d")
     const buttons = document.getElementsByClassName("color-button")
+    const eraser = document.getElementById("eraser")
+    const trash = document.getElementById("trash")
 
-
+    let localX = 0
+    let localY = 0
     let localProgress = 0
     let localColor = ctx.strokeStyle
     let isDrawing = false
@@ -25,13 +28,27 @@ window.onload = function () {
         }
     })
 
-    socket.on("updateCanvas", function (data) {
-        if (Object.keys(data).length) UpdateDrawing(data)
+
+    eraser.onclick = function () {
+        ctx.strokeStyle = "#FFFFFF"
+        localColor = "#FFFFFF"
+        console.log(ctx.strokeStyle)
+    }
+
+    trash.onclick = function () {
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+        socket.emit("dropPicture")
+    }
+
+    socket.on("updateCanvas", async function (data) {
+        if (Object.keys(data).length) await UpdateDrawing(data)
     })
 
     canvas.onmousemove = function (e) {
+        localX = e.clientX - this.offsetLeft
+        localY = e.clientY - this.offsetTop
         if (isDrawing) {
-            addMousePos(e.clientX - this.offsetLeft, e.clientY - this.offsetTop, true)
+            addMousePos(localX, localY, true)
         }
     }
 
@@ -47,6 +64,7 @@ window.onload = function () {
     function UpdateDrawing(data) {
         for (let i = localProgress; i < data.mouseX.length; i++) {
             ctx.beginPath()
+
             if (data.mousedown[i] && i) ctx.moveTo(data.mouseX[i - 1], data.mouseY[i - 1])
             else ctx.moveTo(data.mouseX[i] - 1, data.mouseY[i])
             ctx.lineTo(data.mouseX[i], data.mouseY[i])
@@ -62,7 +80,6 @@ window.onload = function () {
 
     function addMousePos(clientX, clientY, isMouseDown) {
         if (prevX !== clientX || prevY !== clientY) {
-
             let data = {
                 clientX,
                 clientY,
