@@ -19,31 +19,42 @@ app.get("/", (req, res) => {
     res.sendFile(__dirname + "/public/index.html")
 })
 
-
+// TODO: Send Picture on Connect
+//FixMe: Getting Null values
 io.on("connection", (socket) => {
-    if (data.mouseX.length) socket.emit("updateCanvas", data)
+    console.log("data")
+    if (data.mouseX.length) {
+
+        socket.emit("sendCanvas", data)
+    }
 
     socket.on("drawing", (picture) => {
 
 
         if (picture.clientX !== undefined) {
+            if (picture.clientX === null) console.log(picture.clientX)
+            socket.broadcast.emit('updateCanvas', picture);
 
-            io.sockets.emit("updateCanvas", picture)
+            //io.sockets.emit("updateCanvas", picture)
+            if (picture.clientX) UpdateData(picture)
         }
     })
 
     socket.on("dropPicture", () => {
+
         io.sockets.emit("deletePicture", socket.id)
     })
 })
 
 
-/* function UpdateData(picture) {
-    data.mouseX[picture.localProgress] = picture.clientX
-    data.mouseY[picture.localProgress] = picture.clientY
-    data.mousedown[picture.localProgress] = picture.isMouseDown
-    data.color[picture.localProgress] = picture.color
-} */
+function UpdateData(picture) {
+    if (picture.clientX !== null) {
+        data.mouseX.push(picture.clientX)
+        data.mouseY.push(picture.clientY)
+        data.mousedown.push(picture.isMouseDown)
+        data.color.push(picture.color)
+    }
+}
 
 
 http.listen(process.env.app_port || 8080, () => {

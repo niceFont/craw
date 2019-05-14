@@ -42,10 +42,13 @@ window.onload = function () {
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
         socket.emit("dropPicture")
     }
-
+    //TODO: Find Way to not redraw
     socket.on("updateCanvas", AddSocketData)
 
+    socket.on("sendCanvas", AddConnectionSocketData)
+
     socket.on("deletePicture", DeletePicture)
+
 
     canvas.onmousemove = function (e) {
 
@@ -106,7 +109,7 @@ window.onload = function () {
 
     function AddMousePos(clientX, clientY, isMouseDown) {
 
-        if (prevX !== clientX || prevY !== clientY) {
+        if (prevX !== clientX || prevY !== clientY && clientX !== undefined) {
             let data = {
                 clientX,
                 clientY,
@@ -114,7 +117,6 @@ window.onload = function () {
                 localProgress,
                 color: ctx.strokeStyle
             }
-            console.log(localData)
             localData.mouseX.push(clientX)
             localData.mouseY.push(clientY)
             localData.mousedown.push(isMouseDown)
@@ -127,11 +129,21 @@ window.onload = function () {
 
 
     function AddSocketData(data) {
-        if (Object.keys(data).length && data.clientX != undefined) {
+        if (Object.keys(data).length) {
             localData.mouseX.push(data.clientX)
             localData.mouseY.push(data.clientY)
             localData.mousedown.push(data.isMouseDown)
             localData.color.push(data.color)
+            LocalDraw()
+        }
+    }
+
+    function AddConnectionSocketData(data) {
+        if (Object.keys(data).length) {
+            localData.mouseX.push(...data.mouseX)
+            localData.mouseY.push(...data.mouseY)
+            localData.mousedown.push(...data.mousedown)
+            localData.color.push(...data.color)
             LocalDraw()
         }
     }
@@ -145,7 +157,6 @@ window.onload = function () {
             mousedown: [],
             color: []
         }
-        console.log(localData)
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
     }
 }
