@@ -6,7 +6,8 @@ window.onload = function () {
     const buttons = document.getElementsByClassName("color-button")
     const eraser = document.getElementById("eraser")
     const trash = document.getElementById("trash")
-
+    const slider = document.getElementById("mySlider")
+    const sliderCount = document.getElementById("sliderCount")
 
     let localProgress = 0
     let localColor = ctx.strokeStyle
@@ -14,15 +15,19 @@ window.onload = function () {
         mouseX: [],
         mouseY: [],
         mousedown: [],
-        color: []
+        color: [],
+        sizes: []
     }
     let isDrawing = false
     let prevX = 0
     let prevY = 0
+    let localSize = ctx.lineWidth
 
     ctx.strokeStyle = "#00000"
     ctx.lineJoin = "round"
     ctx.lineWidth = 3
+
+    sliderCount.innerHTML = 3
 
     Array.prototype.forEach.call(buttons, element => {
         element.onclick = function (e) {
@@ -31,6 +36,14 @@ window.onload = function () {
             localColor = color
         }
     })
+
+
+
+    socket.on("updateCanvas", AddSocketData)
+
+    socket.on("sendCanvas", AddConnectionSocketData)
+
+    socket.on("deletePicture", DeletePicture)
 
 
     eraser.onclick = function () {
@@ -42,13 +55,12 @@ window.onload = function () {
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
         socket.emit("dropPicture")
     }
-    //TODO: Find Way to not redraw
-    socket.on("updateCanvas", AddSocketData)
 
-    socket.on("sendCanvas", AddConnectionSocketData)
-
-    socket.on("deletePicture", DeletePicture)
-
+    slider.oninput = function (e) {
+        localSize = this.value
+        ctx.lineWidth = this.value
+        sliderCount.innerHTML = this.value
+    }
 
     canvas.onmousemove = function (e) {
 
@@ -66,6 +78,10 @@ window.onload = function () {
         LocalDraw()
     }
 
+    canvas.onmouseleave = function () {
+        isDrawing = false
+    }
+
     canvas.onmouseup = function (e) {
         isDrawing = false
     }
@@ -79,11 +95,13 @@ window.onload = function () {
             else ctx.moveTo(localData.mouseX[i] - 1, localData.mouseY[i])
             ctx.lineTo(localData.mouseX[i], localData.mouseY[i])
             ctx.strokeStyle = localData.color[i]
+            ctx.lineWidth = localData.sizes[i]
             ctx.closePath()
             ctx.stroke()
             localProgress++
         }
         ctx.strokeStyle = localColor
+        ctx.lineWidth = localSize
         ctx.save()
     }
 
@@ -98,11 +116,13 @@ window.onload = function () {
 
             ctx.lineTo(data.mouseX[i], data.mouseY[i])
             ctx.strokeStyle = data.color[i]
+            ctx.lineWidth = data.sizes[i]
             ctx.closePath()
             ctx.stroke()
             localProgress++
         }
         ctx.strokeStyle = localColor
+        ctx.lineWidth = localSize
         ctx.save()
     }
 
@@ -115,17 +135,20 @@ window.onload = function () {
                 clientY,
                 isMouseDown,
                 localProgress,
-                color: ctx.strokeStyle
+                color: ctx.strokeStyle,
+                size: ctx.lineWidth
             }
             localData.mouseX.push(clientX)
             localData.mouseY.push(clientY)
             localData.mousedown.push(isMouseDown)
             localData.color.push(ctx.strokeStyle)
+            localData.sizes.push(ctx.lineWidth)
             socket.emit("drawing", data)
             prevX = clientX
             prevY = clientY
         }
     }
+
 
 
     function AddSocketData(data) {
@@ -134,6 +157,7 @@ window.onload = function () {
             localData.mouseY.push(data.clientY)
             localData.mousedown.push(data.isMouseDown)
             localData.color.push(data.color)
+            localData.sizes.push(data.size)
             LocalDraw()
         }
     }
@@ -144,6 +168,7 @@ window.onload = function () {
             localData.mouseY.push(...data.mouseY)
             localData.mousedown.push(...data.mousedown)
             localData.color.push(...data.color)
+            localData.sizes.push(...data.sizes)
             LocalDraw()
         }
     }
@@ -155,7 +180,8 @@ window.onload = function () {
             mouseX: [],
             mouseY: [],
             mousedown: [],
-            color: []
+            color: [],
+            sizes: []
         }
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
     }

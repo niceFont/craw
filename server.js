@@ -8,7 +8,7 @@ let data = {
     mouseY: [],
     mousedown: [],
     color: [],
-
+    sizes: []
 }
 
 
@@ -19,29 +19,28 @@ app.get("/", (req, res) => {
     res.sendFile(__dirname + "/public/index.html")
 })
 
-// TODO: Send Picture on Connect
-//FixMe: Getting Null values
 io.on("connection", (socket) => {
-    console.log("data")
     if (data.mouseX.length) {
 
         socket.emit("sendCanvas", data)
     }
 
     socket.on("drawing", (picture) => {
-
-
         if (picture.clientX !== undefined) {
-            if (picture.clientX === null) console.log(picture.clientX)
-            socket.broadcast.emit('updateCanvas', picture);
 
-            //io.sockets.emit("updateCanvas", picture)
+            socket.broadcast.emit('updateCanvas', picture);
             if (picture.clientX) UpdateData(picture)
         }
     })
 
     socket.on("dropPicture", () => {
-
+        data = {
+            mouseX: [],
+            mouseY: [],
+            mousedown: [],
+            color: [],
+            sizes: []
+        }
         io.sockets.emit("deletePicture", socket.id)
     })
 })
@@ -53,10 +52,11 @@ function UpdateData(picture) {
         data.mouseY.push(picture.clientY)
         data.mousedown.push(picture.isMouseDown)
         data.color.push(picture.color)
+        data.sizes.push(picture.size)
     }
 }
 
 
 http.listen(process.env.app_port || 8080, () => {
-    console.log("Server running on port 3000...")
+    console.log(`Server running on Port ${process.env.app_port || 8080}`)
 })
