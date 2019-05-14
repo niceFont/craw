@@ -11,10 +11,7 @@ let data = {
 
 }
 
-let prevCoord = {}
-let prevSocketId
 
-let t = 0
 app.use(express.static(__dirname))
 
 
@@ -28,51 +25,26 @@ io.on("connection", (socket) => {
 
     socket.on("drawing", (picture) => {
 
+
         if (picture.clientX !== undefined) {
-            if (!checkSocket(socket, picture)) {
 
-                UpdateData(picture)
-                io.sockets.emit("updateCanvas", data)
-            }
-
-            prevCoord = picture
-            prevSocketId = socket.id
-
+            io.sockets.emit("updateCanvas", picture)
         }
     })
 
     socket.on("dropPicture", () => {
-        data = {
-            mouseX: [],
-            mouseY: [],
-            mousedown: [],
-            color: [],
-
-        }
+        io.sockets.emit("deletePicture", socket.id)
     })
 })
 
 
-function UpdateData(picture) {
+/* function UpdateData(picture) {
     data.mouseX[picture.localProgress] = picture.clientX
     data.mouseY[picture.localProgress] = picture.clientY
     data.mousedown[picture.localProgress] = picture.isMouseDown
     data.color[picture.localProgress] = picture.color
-}
+} */
 
-function checkSocket(socket, picture) {
-
-    if (socket.id === prevSocketId) {
-        if (picture.clientX[picture.clientX.length - 1] === prevCoord.clientX) {
-            if (picture.clientY[picture.clientY.length - 1] === prevCoord.clientY) {
-                if (picture.clientX[picture.isMouseDown.length - 1] === prevCoord.isMouseDown) {
-                    return true
-                }
-            }
-        }
-    }
-    return false
-}
 
 http.listen(process.env.app_port || 8080, () => {
     console.log("Server running on port 3000...")

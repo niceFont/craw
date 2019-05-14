@@ -7,10 +7,15 @@ window.onload = function () {
     const eraser = document.getElementById("eraser")
     const trash = document.getElementById("trash")
 
-    let localX = 0
-    let localY = 0
+
     let localProgress = 0
     let localColor = ctx.strokeStyle
+    let localData = {
+        mouseX: [],
+        mouseY: [],
+        mousedown: [],
+        color: []
+    }
     let isDrawing = false
     let prevX = 0
     let prevY = 0
@@ -18,7 +23,6 @@ window.onload = function () {
     ctx.strokeStyle = "#00000"
     ctx.lineJoin = "round"
     ctx.lineWidth = 3
-
 
     Array.prototype.forEach.call(buttons, element => {
         element.onclick = function (e) {
@@ -32,7 +36,6 @@ window.onload = function () {
     eraser.onclick = function () {
         ctx.strokeStyle = "#FFFFFF"
         localColor = "#FFFFFF"
-        console.log(ctx.strokeStyle)
     }
 
     trash.onclick = function () {
@@ -40,33 +43,56 @@ window.onload = function () {
         socket.emit("dropPicture")
     }
 
-    socket.on("updateCanvas", async function (data) {
-        if (Object.keys(data).length) await UpdateDrawing(data)
-    })
+    socket.on("updateCanvas", AddSocketData)
+
+    socket.on("deletePicture", DeletePicture)
 
     canvas.onmousemove = function (e) {
-        localX = e.clientX - this.offsetLeft
-        localY = e.clientY - this.offsetTop
+
         if (isDrawing) {
-            addMousePos(localX, localY, true)
+
+            AddMousePos(e.clientX - this.offsetLeft, e.clientY - this.offsetTop, isDrawing)
+            LocalDraw()
         }
     }
 
     canvas.onmousedown = function (e) {
+
         isDrawing = true
-        addMousePos(e.clientX - this.offsetLeft, e.clientY - this.offsetTop, false)
+        AddMousePos(e.clientX - this.offsetLeft, e.clientY - this.offsetTop, false)
+        LocalDraw()
     }
 
     canvas.onmouseup = function (e) {
         isDrawing = false
     }
 
+    function LocalDraw() {
+
+        for (let i = localProgress; i < localData.mouseX.length; i++) {
+            ctx.beginPath()
+            ctx.strokeStyle = localData.color[i]
+            if (localData.mousedown[i] && i) ctx.moveTo(localData.mouseX[i - 1], localData.mouseY[i - 1])
+            else ctx.moveTo(localData.mouseX[i] - 1, localData.mouseY[i])
+            ctx.lineTo(localData.mouseX[i], localData.mouseY[i])
+            ctx.strokeStyle = localData.color[i]
+            ctx.closePath()
+            ctx.stroke()
+            localProgress++
+        }
+        ctx.strokeStyle = localColor
+        ctx.save()
+    }
+
+
     function UpdateDrawing(data) {
         for (let i = localProgress; i < data.mouseX.length; i++) {
+
             ctx.beginPath()
 
             if (data.mousedown[i] && i) ctx.moveTo(data.mouseX[i - 1], data.mouseY[i - 1])
             else ctx.moveTo(data.mouseX[i] - 1, data.mouseY[i])
+
             ctx.lineTo(data.mouseX[i], data.mouseY[i])
             ctx.strokeStyle = data.color[i]
             ctx.closePath()
@@ -78,7 +104,8 @@ window.onload = function () {
     }
 
 
-    function addMousePos(clientX, clientY, isMouseDown) {
+    function AddMousePos(clientX, clientY, isMouseDown) {
+
         if (prevX !== clientX || prevY !== clientY) {
             let data = {
                 clientX,
@@ -87,9 +114,38 @@ window.onload = function () {
                 localProgress,
                 color: ctx.strokeStyle
             }
+            console.log(localData)
+            localData.mouseX.push(clientX)
+            localData.mouseY.push(clientY)
+            localData.mousedown.push(isMouseDown)
+            localData.color.push(ctx.strokeStyle)
             socket.emit("drawing", data)
             prevX = clientX
             prevY = clientY
         }
+    }
+
+
+    function AddSocketData(data) {
+        if (Object.keys(data).length && data.clientX != undefined) {
+            localData.mouseX.push(data.clientX)
+            localData.mouseY.push(data.clientY)
+            localData.mousedown.push(data.isMouseDown)
+            localData.color.push(data.color)
+            LocalDraw()
+        }
+    }
+
+
+    function DeletePicture() {
+        localProgress = 0
+        localData = {
+            mouseX: [],
+            mouseY: [],
+            mousedown: [],
+            color: []
+        }
+        console.log(localData)
+        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
     }
 }
