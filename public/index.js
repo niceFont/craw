@@ -23,7 +23,7 @@ window.onload = function () {
     let isDrawing = false
     let prevX = 0
     let prevY = 0
-    let localSize = ctx.lineWidth
+    let localSize = 3
 
     ctx.strokeStyle = "#00000"
     ctx.lineJoin = "round"
@@ -103,6 +103,7 @@ window.onload = function () {
             ctx.closePath()
             ctx.stroke()
             localProgress++
+            console.log("local")
         }
         ctx.strokeStyle = localColor
         ctx.lineWidth = localSize
@@ -111,13 +112,15 @@ window.onload = function () {
 
 
     function UpdateDrawing(data) {
+
         for (let i = serverProgress; i < data.mouseX.length; i++) {
             if (data.users[i] !== localUsername) {
                 ctx.beginPath()
 
                 if (data.mousedown[i] && i) ctx.moveTo(data.mouseX[i - 1], data.mouseY[i - 1])
                 else ctx.moveTo(data.mouseX[i] - 1, data.mouseY[i])
-
+                console.log("server")
+                console.log(data)
                 ctx.lineTo(data.mouseX[i], data.mouseY[i])
                 ctx.strokeStyle = data.color[i]
                 ctx.lineWidth = data.sizes[i]
@@ -163,6 +166,7 @@ window.onload = function () {
             localData.mousedown.push(data.isMouseDown)
             localData.color.push(data.color)
             localData.sizes.push(data.size) */
+
             UpdateDrawing(data)
         }
     }

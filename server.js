@@ -31,6 +31,7 @@ io.on("connection", (socket) => {
     }
 
     socket.on("drawing", (picture) => {
+        console.log(picture)
         if (picture && picture.clientX !== undefined) {
             if (picture.clientX) UpdateData(picture)
             socket.broadcast.emit('updateCanvas', data);
@@ -54,6 +55,14 @@ io.on("connection", (socket) => {
 
 function UpdateData(picture) {
     if (picture.clientX !== null) {
+        if (picture.username !== data.users[data.users.length - 1]) {
+            data.mouseX.push(picture.clientX)
+            data.mouseY.push(picture.clientY)
+            data.mousedown.push(false)
+            data.color.push(picture.color)
+            data.sizes.push(picture.size)
+            data.users.push(picture.username)
+        }
         data.mouseX.push(picture.clientX)
         data.mouseY.push(picture.clientY)
         data.mousedown.push(picture.isMouseDown)
