@@ -8,9 +8,11 @@ let data = {
     mouseY: [],
     mousedown: [],
     color: [],
-    sizes: []
+    sizes: [],
+    users: []
 }
 
+//TODO: MAKE IT FASTER: MAYBE LOCALSTORAGE
 
 app.use(express.static(__dirname))
 
@@ -20,16 +22,19 @@ app.get("/", (req, res) => {
 })
 
 io.on("connection", (socket) => {
+
+    socket.emit("assignUsername", socket.id)
+
     if (data.mouseX.length) {
 
         socket.emit("sendCanvas", data)
     }
 
     socket.on("drawing", (picture) => {
-        if (picture.clientX !== undefined) {
-
-            socket.broadcast.emit('updateCanvas', picture);
+        if (picture && picture.clientX !== undefined) {
             if (picture.clientX) UpdateData(picture)
+            socket.broadcast.emit('updateCanvas', data);
+
         }
     })
 
@@ -39,7 +44,8 @@ io.on("connection", (socket) => {
             mouseY: [],
             mousedown: [],
             color: [],
-            sizes: []
+            sizes: [],
+            users: []
         }
         io.sockets.emit("deletePicture", socket.id)
     })
@@ -53,6 +59,7 @@ function UpdateData(picture) {
         data.mousedown.push(picture.isMouseDown)
         data.color.push(picture.color)
         data.sizes.push(picture.size)
+        data.users.push(picture.username)
     }
 }
 

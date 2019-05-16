@@ -9,7 +9,9 @@ window.onload = function () {
     const slider = document.getElementById("mySlider")
     const sliderCount = document.getElementById("sliderCount")
 
+    let localUsername
     let localProgress = 0
+    let serverProgress = 0
     let localColor = ctx.strokeStyle
     let localData = {
         mouseX: [],
@@ -37,7 +39,9 @@ window.onload = function () {
         }
     })
 
-
+    socket.on("assignUsername", (username) => {
+        localUsername = username
+    })
 
     socket.on("updateCanvas", AddSocketData)
 
@@ -66,7 +70,7 @@ window.onload = function () {
 
         if (isDrawing) {
 
-            AddMousePos(e.clientX - this.offsetLeft, e.clientY - this.offsetTop, isDrawing)
+            AddMousePos(e.clientX - this.offsetLeft, e.clientY - this.offsetTop, true)
             LocalDraw()
         }
     }
@@ -107,19 +111,20 @@ window.onload = function () {
 
 
     function UpdateDrawing(data) {
-        for (let i = localProgress; i < data.mouseX.length; i++) {
+        for (let i = serverProgress; i < data.mouseX.length; i++) {
+            if (data.users[i] !== localUsername) {
+                ctx.beginPath()
 
-            ctx.beginPath()
+                if (data.mousedown[i] && i) ctx.moveTo(data.mouseX[i - 1], data.mouseY[i - 1])
+                else ctx.moveTo(data.mouseX[i] - 1, data.mouseY[i])
 
-            if (data.mousedown[i] && i) ctx.moveTo(data.mouseX[i - 1], data.mouseY[i - 1])
-            else ctx.moveTo(data.mouseX[i] - 1, data.mouseY[i])
-
-            ctx.lineTo(data.mouseX[i], data.mouseY[i])
-            ctx.strokeStyle = data.color[i]
-            ctx.lineWidth = data.sizes[i]
-            ctx.closePath()
-            ctx.stroke()
-            localProgress++
+                ctx.lineTo(data.mouseX[i], data.mouseY[i])
+                ctx.strokeStyle = data.color[i]
+                ctx.lineWidth = data.sizes[i]
+                ctx.closePath()
+                ctx.stroke()
+                serverProgress++
+            }
         }
         ctx.strokeStyle = localColor
         ctx.lineWidth = localSize
@@ -134,9 +139,9 @@ window.onload = function () {
                 clientX,
                 clientY,
                 isMouseDown,
-                localProgress,
                 color: ctx.strokeStyle,
-                size: ctx.lineWidth
+                size: ctx.lineWidth,
+                username: localUsername
             }
             localData.mouseX.push(clientX)
             localData.mouseY.push(clientY)
@@ -153,35 +158,37 @@ window.onload = function () {
 
     function AddSocketData(data) {
         if (Object.keys(data).length) {
-            localData.mouseX.push(data.clientX)
+            /* localData.mouseX.push(data.clientX)
             localData.mouseY.push(data.clientY)
             localData.mousedown.push(data.isMouseDown)
             localData.color.push(data.color)
-            localData.sizes.push(data.size)
-            LocalDraw()
+            localData.sizes.push(data.size) */
+            UpdateDrawing(data)
         }
     }
 
     function AddConnectionSocketData(data) {
         if (Object.keys(data).length) {
-            localData.mouseX.push(...data.mouseX)
+            /* localData.mouseX.push(...data.mouseX)
             localData.mouseY.push(...data.mouseY)
             localData.mousedown.push(...data.mousedown)
             localData.color.push(...data.color)
-            localData.sizes.push(...data.sizes)
-            LocalDraw()
+            localData.sizes.push(...data.sizes) */
+            UpdateDrawing(data)
         }
     }
 
 
     function DeletePicture() {
         localProgress = 0
+        serverProgress = 0
         localData = {
             mouseX: [],
             mouseY: [],
             mousedown: [],
             color: [],
-            sizes: []
+            sizes: [],
+            users: []
         }
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
     }
