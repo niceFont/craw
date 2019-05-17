@@ -31,7 +31,6 @@ io.on("connection", (socket) => {
     }
 
     socket.on("drawing", (picture) => {
-        console.log(picture)
         if (picture && picture.clientX !== undefined) {
             if (picture.clientX) UpdateData(picture)
             socket.broadcast.emit('updateCanvas', data);
