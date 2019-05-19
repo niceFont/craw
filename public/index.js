@@ -24,12 +24,13 @@ window.onload = function () {
     let prevX = 0
     let prevY = 0
     let localSize = 3
-
+    let canvasMap = new Map()
+    let lastPointMap = new Map()
     ctx.strokeStyle = "#00000"
     ctx.lineJoin = "round"
-    ctx.lineWidth = 3
+    ctx.lineWidth = 10
 
-    sliderCount.innerHTML = 3
+    sliderCount.innerHTML = 10
 
     Array.prototype.forEach.call(buttons, element => {
         element.onclick = function (e) {
@@ -39,13 +40,16 @@ window.onload = function () {
         }
     })
 
-    socket.on("assignUsername", (username) => {
-        localUsername = username
+    socket.on("addUser", GenerateCanvas)
+
+    socket.on("assignUsername", (userID) => {
+        localUsername = userID
+
     })
 
-    socket.on("updateCanvas", AddSocketData)
+    socket.on("updateCanvas", DispatchActions)
 
-    socket.on("sendCanvas", AddConnectionSocketData)
+    socket.on("sendCanvas", DispatchActions)
 
     socket.on("deletePicture", DeletePicture)
 
@@ -91,7 +95,6 @@ window.onload = function () {
     }
 
     function LocalDraw() {
-
         for (let i = localProgress; i < localData.mouseX.length; i++) {
             ctx.beginPath()
             ctx.strokeStyle = localData.color[i]
@@ -103,7 +106,7 @@ window.onload = function () {
             ctx.closePath()
             ctx.stroke()
             localProgress++
-            console.log("local")
+
         }
         ctx.strokeStyle = localColor
         ctx.lineWidth = localSize
@@ -111,29 +114,74 @@ window.onload = function () {
     }
 
 
-    function UpdateDrawing(data) {
 
-        for (let i = serverProgress; i < data.mouseX.length; i++) {
-            if (data.users[i] !== localUsername) {
-                ctx.beginPath()
+    function UpdateDrawingByID(data, userID) {
+        let localCtx
+        let localCanvas = SearchCanvasByID(userID)
+        let tempData = {
+            mouseX: [],
+            mouseY: [],
+            mousedown: [],
+            color: [],
+            sizes: []
+        }
 
-                if (data.mousedown[i] && i) ctx.moveTo(data.mouseX[i - 1], data.mouseY[i - 1])
-                else ctx.moveTo(data.mouseX[i] - 1, data.mouseY[i])
-                console.log("server")
-                console.log(data)
-                ctx.lineTo(data.mouseX[i], data.mouseY[i])
-                ctx.strokeStyle = data.color[i]
-                ctx.lineWidth = data.sizes[i]
-                ctx.closePath()
-                ctx.stroke()
-                serverProgress++
+        let tempX, tempY
+        if (lastPointMap.has(userID)) {
+            let lastPoint = lastPointMap.get(userID)
+
+            tempX = lastPoint.mouseX
+            tempY = lastPoint.mouseY
+        }
+        for (let index = serverProgress; index < data.mouseX.length; index++) {
+
+            if (userID === data.users[index]) {
+                tempData.mouseX.push(data.mouseX[index])
+                tempData.mouseY.push(data.mouseY[index])
+                tempData.mousedown.push(data.mousedown[index])
+                tempData.sizes.push(data.sizes[index])
+                tempData.color.push(data.color[index])
             }
         }
-        ctx.strokeStyle = localColor
-        ctx.lineWidth = localSize
-        ctx.save()
-    }
+        if (localCanvas) {
+            localCtx = localCanvas.getContext("2d")
+        } else {
+            let genCanvas = GenerateCanvas(userID)
+            localCtx = genCanvas.getContext("2d")
+        }
+        localCtx.lineJoin = "round"
+        for (let i = 0; i < tempData.mouseX.length; i++) {
+            localCtx.beginPath()
 
+            if (tempData.mousedown[i] && serverProgress) {
+                localCtx.moveTo(tempX, tempY)
+                if (lastPointMap.has(userID)) {
+                    let lastPoint = lastPointMap.get(userID)
+
+                    tempX = lastPoint.mouseX
+                    tempY = lastPoint.mouseY
+                }
+            } else {
+                tempX = tempData.mouseX[i]
+                tempY = tempData.mouseY[i]
+                localCtx.moveTo(tempData.mouseX[i] - 1, tempData.mouseY[i])
+            }
+            localCtx.lineTo(tempData.mouseX[i], tempData.mouseY[i])
+            localCtx.strokeStyle = tempData.color[i]
+            localCtx.lineWidth = tempData.sizes[i]
+            localCtx.closePath()
+            localCtx.stroke()
+            serverProgress++
+            lastPointMap.set(userID, {
+                mouseX: tempData.mouseX[i],
+                mouseY: tempData.mouseY[i]
+            })
+
+        }
+        socket.emit("lastPointBackUp", {
+            lastPoints: lastPointMap
+        })
+    }
 
     function AddMousePos(clientX, clientY, isMouseDown) {
 
@@ -146,6 +194,7 @@ window.onload = function () {
                 size: ctx.lineWidth,
                 username: localUsername
             }
+
             localData.mouseX.push(clientX)
             localData.mouseY.push(clientY)
             localData.mousedown.push(isMouseDown)
@@ -159,29 +208,40 @@ window.onload = function () {
 
 
 
-    function AddSocketData(data) {
-        if (Object.keys(data).length) {
-            /* localData.mouseX.push(data.clientX)
-            localData.mouseY.push(data.clientY)
-            localData.mousedown.push(data.isMouseDown)
-            localData.color.push(data.color)
-            localData.sizes.push(data.size) */
 
-            UpdateDrawing(data)
+    function GenerateCanvas(canvasID) {
+        if (!canvasID) {
+            console.error("CanvasID Missing")
+            return
         }
+        let newCanvas = document.createElement("canvas")
+        let container = document.getElementById("canvas-container")
+        container.appendChild(newCanvas)
+        newCanvas.width = 800
+        newCanvas.height = 600
+
+        canvasMap.set(canvasID, newCanvas)
+
+        return newCanvas
     }
 
-    function AddConnectionSocketData(data) {
-        if (Object.keys(data).length) {
-            /* localData.mouseX.push(...data.mouseX)
-            localData.mouseY.push(...data.mouseY)
-            localData.mousedown.push(...data.mousedown)
-            localData.color.push(...data.color)
-            localData.sizes.push(...data.sizes) */
-            UpdateDrawing(data)
-        }
+    function SearchCanvasByID(userID) {
+        if (!canvasMap.has(userID) || canvasMap.has(userID) === undefined) return false
+        else return canvasMap.get(userID)
     }
 
+    function DispatchActions(data) {
+        if (Object.keys(data).length) {
+            let prevUser = null
+            for (let index = serverProgress; index < data.mouseX.length; index++) {
+
+                if (prevUser !== data.users[index] && data.users[index] !== localUsername) {
+                    UpdateDrawingByID(data, data.users[index])
+                }
+                prevUser = data.users[index]
+            }
+        }
+    }
 
     function DeletePicture() {
         localProgress = 0
@@ -194,6 +254,12 @@ window.onload = function () {
             sizes: [],
             users: []
         }
+
+        canvasMap.forEach((canvas) => {
+            canvas.getContext("2d").clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+
+        })
+
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
     }
 }

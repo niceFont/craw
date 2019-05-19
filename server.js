@@ -3,13 +3,30 @@ const app = express()
 const http = require("http").Server(app)
 const io = require("socket.io")(http)
 
+/* const {
+    performance,
+    PerformanceObserver
+} = require("perf_hooks") */
+
+/* const obs = new PerformanceObserver((items) => {
+
+    items.getEntries().forEach((item) => {
+        console.log(item.name, +' ' + item.duration)
+    })
+})
+obs.observe({
+    entryTypes: ['measure']
+}) */
+
+
+
 let data = {
     mouseX: [],
     mouseY: [],
     mousedown: [],
     color: [],
     sizes: [],
-    users: []
+    users: [],
 }
 
 //TODO: MAKE IT FASTER: MAYBE LOCALSTORAGE
@@ -22,21 +39,32 @@ app.get("/", (req, res) => {
 })
 
 io.on("connection", (socket) => {
-
+    data.userCount++
+    console.log(socket.id)
     socket.emit("assignUsername", socket.id)
+
+    socket.on("disconnect", () => {
+        data.userCount--
+    })
 
     if (data.mouseX.length) {
 
         socket.emit("sendCanvas", data)
     }
 
+
     socket.on("drawing", (picture) => {
+        //performance.mark("start")
         if (picture && picture.clientX !== undefined) {
             if (picture.clientX) UpdateData(picture)
             socket.broadcast.emit('updateCanvas', data);
 
         }
+        //performance.mark("end")
+        //performance.measure("socket", "start", "end")
+
     })
+
 
     socket.on("dropPicture", () => {
         data = {
@@ -45,7 +73,8 @@ io.on("connection", (socket) => {
             mousedown: [],
             color: [],
             sizes: [],
-            users: []
+            users: [],
+            userCount: data.userCount
         }
         io.sockets.emit("deletePicture", socket.id)
     })
@@ -54,14 +83,14 @@ io.on("connection", (socket) => {
 
 function UpdateData(picture) {
     if (picture.clientX !== null) {
-        if (picture.username !== data.users[data.users.length - 1]) {
+        /* if (picture.username !== data.users[data.users.length - 1]) {
             data.mouseX.push(picture.clientX)
             data.mouseY.push(picture.clientY)
             data.mousedown.push(false)
             data.color.push(picture.color)
             data.sizes.push(picture.size)
             data.users.push(picture.username)
-        }
+        } */
         data.mouseX.push(picture.clientX)
         data.mouseY.push(picture.clientY)
         data.mousedown.push(picture.isMouseDown)
