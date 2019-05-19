@@ -8,6 +8,7 @@ window.onload = function () {
     const trash = document.getElementById("trash")
     const slider = document.getElementById("mySlider")
     const sliderCount = document.getElementById("sliderCount")
+    const colorPicker = document.getElementById("colorPicker")
 
     let localUsername
     let localProgress = 0
@@ -62,6 +63,11 @@ window.onload = function () {
     trash.onclick = function () {
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
         socket.emit("dropPicture")
+    }
+
+    colorPicker.oninput = function (e) {
+        ctx.strokeStyle = e.target.value
+        localColor = e.target.value
     }
 
     slider.oninput = function (e) {

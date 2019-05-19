@@ -134,23 +134,29 @@ header {
 
 .color-button {
     border-radius: 100%;
+    border: none;
     height: 30px;
     width: 30px;
     margin: 30px 10px 10px 0;
+    background: none;
     cursor: pointer;
     box-shadow: inset 0px 0px 4px -1px rgba(0, 0, 0, 0.75);
 }
 
+input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+    border-radius: 100%;
+}
+
+input[type="color"]::-webkit-color-swatch {
+    border-radius: 100%;
+}
+
 .color-button:hover {
-    width: 35px;
-    height: 35px;
     transition: all 0.2s ease-out;
 }
 
 .menu-icon:hover {
-    width: 40px;
-    height: 40px;
-    background-size: 40px;
     transition: all 0.2s ease-out;
 }
 
@@ -173,7 +179,6 @@ header {
 #orange {
     background-color: #fed766;
 }
-
 
 
 #eraser {

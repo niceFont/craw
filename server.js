@@ -40,7 +40,6 @@ app.get("/", (req, res) => {
 
 io.on("connection", (socket) => {
     data.userCount++
-    console.log(socket.id)
     socket.emit("assignUsername", socket.id)
 
     socket.on("disconnect", () => {
