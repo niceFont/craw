@@ -1,7 +1,7 @@
 # CRAW - Cooperative Drawing
 
 
-Drawing App using Socket-IO and HTML 5.
+Drawing App using Socket.IO and HTML 5.
 
 
 #Demo:
