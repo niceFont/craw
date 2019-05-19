@@ -24,7 +24,7 @@ window.onload = function () {
     let isDrawing = false
     let prevX = 0
     let prevY = 0
-    let localSize = 3
+    let localSize = 10
     let canvasMap = new Map()
     let lastPointMap = new Map()
     ctx.strokeStyle = "#00000"
@@ -68,7 +68,15 @@ window.onload = function () {
     colorPicker.oninput = function (e) {
         ctx.strokeStyle = e.target.value
         localColor = e.target.value
+        return
     }
+
+    colorPicker.onclick = function (e) {
+        return
+    }
+
+
+    colorPicker.onpage
 
     slider.oninput = function (e) {
         localSize = this.value
@@ -101,6 +109,7 @@ window.onload = function () {
     }
 
     function LocalDraw() {
+        console.log(localData)
         for (let i = localProgress; i < localData.mouseX.length; i++) {
             ctx.beginPath()
             ctx.strokeStyle = localData.color[i]
@@ -123,6 +132,7 @@ window.onload = function () {
 
     function UpdateDrawingByID(data, userID) {
         let localCtx
+
         let localCanvas = SearchCanvasByID(userID)
         let tempData = {
             mouseX: [],
