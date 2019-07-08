@@ -2,7 +2,7 @@ const express = require("express")
 const app = express()
 const http = require("http").Server(app)
 const io = require("socket.io")(http)
-
+const cookieSession = require("cookie-session")
 
 let data = {
     mouseX: [],
@@ -13,18 +13,29 @@ let data = {
     users: [],
 }
 
+let socketID = null
+let sessionID = null
 
 app.use(express.static(__dirname))
-
+app.use(cookieSession({
+    name: "session",
+    keys: ["key1"],
+    maxAge: 10 * 1000
+}))
 
 app.get("/", (req, res) => {
+    console.log(req.session)
+    console.log(sessionID, "sessionid")
+    req.session.id = (req.session.id || socketID)
+    sessionID = req.session.id
     res.sendFile(__dirname + "/public/index.html")
 })
 
 
 io.on("connection", (socket) => {
+    socketID = socket.id
     data.userCount++
-    socket.emit("assignUsername", socket.id)
+    socket.emit("assignUsername", sessionID)
 
     socket.on("disconnect", () => {
         data.userCount--
@@ -38,6 +49,7 @@ io.on("connection", (socket) => {
 
     socket.on("drawing", (picture) => {
         if (picture && picture.clientX !== undefined) {
+            console.log(picture)
             if (picture.clientX) UpdateData(picture)
             socket.broadcast.emit('updateCanvas', data);
 

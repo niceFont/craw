@@ -45,7 +45,7 @@ window.onload = function () {
 
     socket.on("assignUsername", (userID) => {
         localUsername = userID
-
+        GenerateCanvas(userID)
     })
 
     socket.on("updateCanvas", DispatchActions)
@@ -109,7 +109,6 @@ window.onload = function () {
     }
 
     function LocalDraw() {
-        console.log(localData)
         for (let i = localProgress; i < localData.mouseX.length; i++) {
             ctx.beginPath()
             ctx.strokeStyle = localData.color[i]
@@ -130,9 +129,8 @@ window.onload = function () {
 
 
 
-    function UpdateDrawingByID(data, userID) {
+    async function UpdateDrawingByID(data, userID) {
         let localCtx
-
         let localCanvas = SearchCanvasByID(userID)
         let tempData = {
             mouseX: [],
@@ -224,13 +222,20 @@ window.onload = function () {
 
 
 
-
+    /*    function IsCanvasEmpty(canvas) {
+           if (!canvas) return false
+           const ctx = canvas.getContext("2d")
+           const buffer = new Uint32Array(ctx.getImageData(0, 0, 800, 600).data.buffer)
+           return !buffer.some(pixel => pixel !== 0)
+       }
+    */
     function GenerateCanvas(canvasID) {
         if (!canvasID) {
             console.error("CanvasID Missing")
             return
         }
         let newCanvas = document.createElement("canvas")
+        newCanvas.className = localUsername
         let container = document.getElementById("canvas-container")
         container.appendChild(newCanvas)
         newCanvas.width = 800
@@ -242,22 +247,35 @@ window.onload = function () {
     }
 
     function SearchCanvasByID(userID) {
-        if (!canvasMap.has(userID) || canvasMap.has(userID) === undefined) return false
-        else return canvasMap.get(userID)
+        foundCanvas = document.getElementsByClassName(userID)
+        if (!foundCanvas.length) return null
+        else return foundCanvas[0]
     }
 
-    function DispatchActions(data) {
+    async function DispatchActions(data) {
         if (Object.keys(data).length) {
             let prevUser = null
+            console.time("dispatch")
+
             for (let index = serverProgress; index < data.mouseX.length; index++) {
 
-                if (prevUser !== data.users[index] && data.users[index] !== localUsername) {
+                if (data.users[index] !== localUsername) {
                     UpdateDrawingByID(data, data.users[index])
                 }
-                prevUser = data.users[index]
             }
+
+            console.timeEnd("dispatch")
         }
     }
+
+    /* function CacheResult(fn) {
+        let cache = {}
+        return function () {
+            let args = arguments[0].className
+            cache[args] = cache[args] || fn.apply(this, arguments)
+            return cache[args]
+        }
+    } */
 
     function DeletePicture() {
         localProgress = 0
@@ -278,4 +296,6 @@ window.onload = function () {
 
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
     }
+
+
 }
