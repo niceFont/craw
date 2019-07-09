@@ -1,7 +1,7 @@
 const express = require("express")
 const app = express()
 const http = require("http").Server(app)
-const io = require("socket.io")(http)
+const io = require("socket.io")(http, { wsEngine: 'ws' })
 const cookieSession = require("cookie-session")
 
 let data = {
@@ -51,7 +51,7 @@ io.on("connection", (socket) => {
         if (picture && picture.clientX !== undefined) {
             console.log(picture)
             if (picture.clientX) UpdateData(picture)
-            socket.broadcast.emit('updateCanvas', data);
+            socket.broadcast.emit('updateCanvas', picture);
 
         }
 

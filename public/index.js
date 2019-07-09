@@ -1,6 +1,6 @@
 window.onload = function () {
 
-    const socket = io()
+    const socket = io({ transports: ["websocket", 'flashsocket', 'xhr-polling', 'jsonp-polling'] })
     const canvas = document.getElementById("myCanvas")
     const ctx = canvas.getContext("2d")
     const buttons = document.getElementsByClassName("color-button")
@@ -9,6 +9,7 @@ window.onload = function () {
     const slider = document.getElementById("mySlider")
     const sliderCount = document.getElementById("sliderCount")
     const colorPicker = document.getElementById("colorPicker")
+
 
     let localUsername
     let localProgress = 0
@@ -45,6 +46,7 @@ window.onload = function () {
 
     socket.on("assignUsername", (userID) => {
         localUsername = userID
+        console.log(userID)
         GenerateCanvas(userID)
     })
 
@@ -129,7 +131,7 @@ window.onload = function () {
 
 
 
-    async function UpdateDrawingByID(data, userID) {
+    function UpdateDrawingByID(data, userID) {
         let localCtx
         let localCanvas = SearchCanvasByID(userID)
         let tempData = {
@@ -147,54 +149,41 @@ window.onload = function () {
             tempX = lastPoint.mouseX
             tempY = lastPoint.mouseY
         }
-        for (let index = serverProgress; index < data.mouseX.length; index++) {
 
-            if (userID === data.users[index]) {
-                tempData.mouseX.push(data.mouseX[index])
-                tempData.mouseY.push(data.mouseY[index])
-                tempData.mousedown.push(data.mousedown[index])
-                tempData.sizes.push(data.sizes[index])
-                tempData.color.push(data.color[index])
-            }
-        }
+        tempData.mouseX[0] = data.clientX
+        tempData.mouseY[0] = data.clientY
+        tempData.mousedown[0] = data.isMouseDown
+        tempData.sizes[0] = data.size
+        tempData.color[0] = data.color
         if (localCanvas) {
             localCtx = localCanvas.getContext("2d")
         } else {
             let genCanvas = GenerateCanvas(userID)
             localCtx = genCanvas.getContext("2d")
         }
+
         localCtx.lineJoin = "round"
-        for (let i = 0; i < tempData.mouseX.length; i++) {
-            localCtx.beginPath()
+        /* for (let i = 0; i < tempData.mouseX.length; i++) { */
+        localCtx.beginPath()
 
-            if (tempData.mousedown[i] && serverProgress) {
-                localCtx.moveTo(tempX, tempY)
-                if (lastPointMap.has(userID)) {
-                    let lastPoint = lastPointMap.get(userID)
-
-                    tempX = lastPoint.mouseX
-                    tempY = lastPoint.mouseY
-                }
-            } else {
-                tempX = tempData.mouseX[i]
-                tempY = tempData.mouseY[i]
-                localCtx.moveTo(tempData.mouseX[i] - 1, tempData.mouseY[i])
-            }
-            localCtx.lineTo(tempData.mouseX[i], tempData.mouseY[i])
-            localCtx.strokeStyle = tempData.color[i]
-            localCtx.lineWidth = tempData.sizes[i]
-            localCtx.closePath()
-            localCtx.stroke()
-            serverProgress++
-            lastPointMap.set(userID, {
-                mouseX: tempData.mouseX[i],
-                mouseY: tempData.mouseY[i]
-            })
-
+        if (data.isMouseDown && serverProgress) {
+            localCtx.moveTo(tempX, tempY)
+        } else {
+            tempX = data.clientX
+            tempY = data.clientY
+            localCtx.moveTo(data.clientX - 1, data.clientY)
         }
-        socket.emit("lastPointBackUp", {
-            lastPoints: lastPointMap
+        localCtx.lineTo(data.clientX, data.clientY)
+        localCtx.strokeStyle = data.color
+        localCtx.lineWidth = data.size
+        localCtx.closePath()
+        localCtx.stroke()
+        serverProgress++
+        lastPointMap.set(userID, {
+            mouseX: data.clientX,
+            mouseY: data.clientY
         })
+        /*  } */
     }
 
     function AddMousePos(clientX, clientY, isMouseDown) {
@@ -235,7 +224,7 @@ window.onload = function () {
             return
         }
         let newCanvas = document.createElement("canvas")
-        newCanvas.className = localUsername
+        newCanvas.className = canvasID
         let container = document.getElementById("canvas-container")
         container.appendChild(newCanvas)
         newCanvas.width = 800
@@ -246,25 +235,20 @@ window.onload = function () {
         return newCanvas
     }
 
+
+    function SeperateDataByUser(data) {
+
+    }
+
     function SearchCanvasByID(userID) {
-        foundCanvas = document.getElementsByClassName(userID)
+        let foundCanvas = document.getElementsByClassName(userID)
         if (!foundCanvas.length) return null
         else return foundCanvas[0]
     }
 
-    async function DispatchActions(data) {
+    function DispatchActions(data) {
         if (Object.keys(data).length) {
-            let prevUser = null
-            console.time("dispatch")
-
-            for (let index = serverProgress; index < data.mouseX.length; index++) {
-
-                if (data.users[index] !== localUsername) {
-                    UpdateDrawingByID(data, data.users[index])
-                }
-            }
-
-            console.timeEnd("dispatch")
+            UpdateDrawingByID(data, data.username)
         }
     }
 
