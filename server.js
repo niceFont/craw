@@ -13,6 +13,7 @@ let data = {
     users: [],
 }
 
+
 let socketID = null
 let sessionID = null
 
@@ -34,7 +35,6 @@ app.get("/", (req, res) => {
 
 io.on("connection", (socket) => {
     socketID = socket.id
-    data.userCount++
     socket.emit("assignUsername", sessionID)
 
     socket.on("disconnect", () => {
@@ -42,17 +42,14 @@ io.on("connection", (socket) => {
     })
 
     if (data.mouseX.length) {
-
-        socket.emit("sendCanvas", data)
+        socket.emit("renderConnectionCanvas", data)
     }
 
 
     socket.on("drawing", (picture) => {
         if (picture && picture.clientX !== undefined) {
-            console.log(picture)
             if (picture.clientX) UpdateData(picture)
             socket.broadcast.emit('updateCanvas', picture);
-
         }
 
     })

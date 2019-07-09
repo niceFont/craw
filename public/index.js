@@ -28,10 +28,10 @@ window.onload = function () {
     let localSize = 10
     let canvasMap = new Map()
     let lastPointMap = new Map()
+
     ctx.strokeStyle = "#00000"
     ctx.lineJoin = "round"
     ctx.lineWidth = 10
-
     sliderCount.innerHTML = 10
 
     Array.prototype.forEach.call(buttons, element => {
@@ -52,7 +52,7 @@ window.onload = function () {
 
     socket.on("updateCanvas", DispatchActions)
 
-    socket.on("sendCanvas", DispatchActions)
+    socket.on("renderConnectionCanvas", RenderCanvas)
 
     socket.on("deletePicture", DeletePicture)
 
@@ -129,32 +129,57 @@ window.onload = function () {
         ctx.save()
     }
 
+    function RenderCanvas(data) {
+
+        let tempX, tempY
+        let tempPoints = {}
+        console.log(data)
+        for (let i = 0; i < data.mouseX.length; i++) {
+
+            let localCanvas = SearchCanvasByID(data.users[i])
+            let localCtx
+
+            if (localCanvas) localCtx = localCanvas.getContext("2d")
+            else {
+                localCanvas = GenerateCanvas(data.users[i])
+                localCtx = localCanvas.getContext("2d")
+            }
+            localCtx.lineJoin = "round"
+            localCtx.beginPath()
+
+            if (data.mousedown[i] && i) {
+                localCtx.moveTo(tempX, tempY)
+                if (tempPoints[data.users[i]]) {
+                    tempX = tempPoints[data.users[i]].PointX
+                    tempY = tempPoints[data.users[i]].PointY
+                }
+            } else {
+                tempX = data.mouseX[i]
+                tempY = data.mouseY[i]
+                localCtx.moveTo(data.mouseX[i] - 1, data.mouseY[i])
+            }
+            localCtx.lineTo(data.mouseX[i], data.mouseY[i])
+            localCtx.strokeStyle = data.color[i]
+            localCtx.lineWidth = data.sizes[i]
+            localCtx.closePath()
+            localCtx.stroke()
+            tempPoints[data.users[i]] = { PointX: data.mouseX[i], PointY: data.mouseY[i] }
+        }
+
+    }
 
 
     function UpdateDrawingByID(data, userID) {
         let localCtx
         let localCanvas = SearchCanvasByID(userID)
-        let tempData = {
-            mouseX: [],
-            mouseY: [],
-            mousedown: [],
-            color: [],
-            sizes: []
-        }
 
         let tempX, tempY
         if (lastPointMap.has(userID)) {
             let lastPoint = lastPointMap.get(userID)
-
             tempX = lastPoint.mouseX
             tempY = lastPoint.mouseY
         }
 
-        tempData.mouseX[0] = data.clientX
-        tempData.mouseY[0] = data.clientY
-        tempData.mousedown[0] = data.isMouseDown
-        tempData.sizes[0] = data.size
-        tempData.color[0] = data.color
         if (localCanvas) {
             localCtx = localCanvas.getContext("2d")
         } else {
@@ -163,7 +188,6 @@ window.onload = function () {
         }
 
         localCtx.lineJoin = "round"
-        /* for (let i = 0; i < tempData.mouseX.length; i++) { */
         localCtx.beginPath()
 
         if (data.isMouseDown && serverProgress) {
@@ -183,7 +207,6 @@ window.onload = function () {
             mouseX: data.clientX,
             mouseY: data.clientY
         })
-        /*  } */
     }
 
     function AddMousePos(clientX, clientY, isMouseDown) {
@@ -195,7 +218,7 @@ window.onload = function () {
                 isMouseDown,
                 color: ctx.strokeStyle,
                 size: ctx.lineWidth,
-                username: localUsername
+                username: localUsername,
             }
 
             localData.mouseX.push(clientX)
@@ -211,13 +234,6 @@ window.onload = function () {
 
 
 
-    /*    function IsCanvasEmpty(canvas) {
-           if (!canvas) return false
-           const ctx = canvas.getContext("2d")
-           const buffer = new Uint32Array(ctx.getImageData(0, 0, 800, 600).data.buffer)
-           return !buffer.some(pixel => pixel !== 0)
-       }
-    */
     function GenerateCanvas(canvasID) {
         if (!canvasID) {
             console.error("CanvasID Missing")
@@ -236,9 +252,6 @@ window.onload = function () {
     }
 
 
-    function SeperateDataByUser(data) {
-
-    }
 
     function SearchCanvasByID(userID) {
         let foundCanvas = document.getElementsByClassName(userID)
@@ -252,15 +265,6 @@ window.onload = function () {
         }
     }
 
-    /* function CacheResult(fn) {
-        let cache = {}
-        return function () {
-            let args = arguments[0].className
-            cache[args] = cache[args] || fn.apply(this, arguments)
-            return cache[args]
-        }
-    } */
-
     function DeletePicture() {
         localProgress = 0
         serverProgress = 0
@@ -273,10 +277,11 @@ window.onload = function () {
             users: []
         }
 
-        canvasMap.forEach((canvas) => {
+        let canvases = document.querySelectorAll("canvas")
+        for (let canvas of canvases) {
             canvas.getContext("2d").clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+        }
 
-        })
 
         ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
     }
