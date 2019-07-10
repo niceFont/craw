@@ -45,9 +45,15 @@ window.onload = function () {
     socket.on("addUser", GenerateCanvas)
 
     socket.on("assignUsername", (userID) => {
-        localUsername = userID
-        console.log(userID)
-        GenerateCanvas(userID)
+        if (userID) {
+            localUsername = userID
+            console.log("Connected as User: " + userID)
+            GenerateCanvas(userID)
+            return
+        }
+
+        console.error("Problem fetching UserID due to server restart. (Reload may be needed)")
+
     })
 
     socket.on("updateCanvas", DispatchActions)
@@ -133,13 +139,11 @@ window.onload = function () {
 
         let tempX, tempY
         let tempPoints = {}
-        console.log(data)
         for (let i = 0; i < data.mouseX.length; i++) {
 
             let localCanvas = SearchCanvasByID(data.users[i])
             let localCtx
-
-            if (localCanvas) localCtx = localCanvas.getContext("2d")
+            if (localCanvas || typeof localCanvas !== "undefined") localCtx = localCanvas.getContext("2d")
             else {
                 localCanvas = GenerateCanvas(data.users[i])
                 localCtx = localCanvas.getContext("2d")
@@ -254,6 +258,7 @@ window.onload = function () {
 
 
     function SearchCanvasByID(userID) {
+        if (!userID || typeof userID === "undefined") return null
         let foundCanvas = document.getElementsByClassName(userID)
         if (!foundCanvas.length) return null
         else return foundCanvas[0]
