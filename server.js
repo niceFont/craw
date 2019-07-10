@@ -21,7 +21,7 @@ app.use(express.static(__dirname))
 app.use(cookieSession({
     name: "session",
     keys: ["key1"],
-    maxAge: 10 * 1000
+    maxAge: 7 * 24 * 60 * 60 * 1000
 }))
 
 app.get("/", (req, res) => {
