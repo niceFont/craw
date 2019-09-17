@@ -35,7 +35,7 @@ window.onload = function () {
     sliderCount.innerHTML = 10
 
     Array.prototype.forEach.call(buttons, element => {
-        element.onclick = function (e) {
+        element.onclick = function () {
             let color = window.getComputedStyle(element).getPropertyValue("background-color")
             ctx.strokeStyle = color
             localColor = color
@@ -79,14 +79,14 @@ window.onload = function () {
         return
     }
 
-    colorPicker.onclick = function (e) {
+    colorPicker.onclick = function () {
         return
     }
 
 
     colorPicker.onpage
 
-    slider.oninput = function (e) {
+    slider.oninput = function () {
         localSize = this.value
         ctx.lineWidth = this.value
         sliderCount.innerHTML = this.value
@@ -112,7 +112,7 @@ window.onload = function () {
         isDrawing = false
     }
 
-    canvas.onmouseup = function (e) {
+    canvas.onmouseup = function () {
         isDrawing = false
     }
 

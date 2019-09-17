@@ -25,8 +25,6 @@ app.use(cookieSession({
 }))
 
 app.get("/", (req, res) => {
-    console.log(req.session)
-    console.log(sessionID, "sessionid")
     req.session.id = (req.session.id || socketID)
     sessionID = req.session.id
     res.sendFile(__dirname + "/public/index.html")
